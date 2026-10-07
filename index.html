@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Always</title>
+    <style>
+        :root {
+            --bg-dark: #121212; --bg-panel: #1e1e1e;
+            --accent: #4CAF50; --text: #ffffff; --text-muted: #aaaaaa;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+        body { background-color: #000; display: flex; justify-content: center; align-items: center; height: 100vh; color: var(--text); overflow: hidden; }
+        #app-container { width: 100%; max-width: 400px; height: 100%; max-height: 850px; background-color: var(--bg-dark); position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        
+        .screen { width: 100%; height: 100%; position: absolute; top: 0; left: 0; transition: transform 0.3s ease, opacity 0.3s ease; display: flex; flex-direction: column; background: var(--bg-dark); z-index: 1; }
+        .hidden { opacity: 0; pointer-events: none; transform: translateX(20px); z-index: 0; }
+        .active { opacity: 1; transform: translateX(0); z-index: 10; }
+
+        /* Başlıklar ve Menüler */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background-color: #111; border-bottom: 1px solid #333; }
+        header h2 { font-weight: 500; font-size: 20px; letter-spacing: 1px; }
+        .icon-btn { background: none; border: none; color: var(--accent); font-size: 24px; cursor: pointer; }
+        
+        /* Ana Ekran / Rehber */
+        #contact-list, #history-list, #message-list { list-style: none; overflow-y: auto; flex-grow: 1; padding: 10px; }
+        .list-item { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .contact-info h3 { font-size: 18px; font-weight: 400; }
+        .contact-info p { font-size: 13px; color: var(--text-muted); margin-top: 5px; }
+        .action-btns button { background: #333; color: white; border: none; padding: 10px; margin-left: 5px; border-radius: 50%; width: 45px; height: 45px; font-size: 18px; cursor: pointer; }
+        .action-btns button.call-btn { background: var(--accent); }
+
+        /* Mesaj Ekranı */
+        #screen-messages { background: #0a0a0a; }
+        .message-bubble { background: #2b5278; padding: 12px 15px; border-radius: 18px 18px 0 18px; margin: 10px 0; max-width: 80%; align-self: flex-end; font-size: 15px; float: right; clear: both; }
+        .message-status { font-size: 10px; color: #88B; text-align: right; display: block; margin-top: 5px; }
+        .message-input-area { display: flex; padding: 15px; background: #111; }
+        .message-input-area input { flex-grow: 1; padding: 12px; border-radius: 20px; border: none; background: #222; color: white; outline: none; }
+        .message-input-area button { background: var(--accent); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; margin-left: 10px; cursor: pointer; }
+
+        /* Arama Ekranı */
+        #screen-call { background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%); text-align: center; justify-content: space-between; padding: 60px 20px 40px; }
+        .call-profile { margin-top: 20px; }
+        .call-profile h2 { font-size: 36px; font-weight: 300; margin-bottom: 10px; letter-spacing: 2px; }
+        #call-status { color: #888; font-size: 18px; }
+        #call-timer { font-size: 20px; color: var(--accent); margin-top: 10px; font-variant-numeric: tabular-nums; }
+        
+        .ambient-controls { margin-top: 40px; display: flex; justify-content: center; gap: 15px; opacity: 0; transition: opacity 1s; }
+        .ambient-btn { background: transparent; border: 1px solid #444; color: #888; border-radius: 20px; padding: 8px 15px; cursor: pointer; font-size: 12px; }
+        .ambient-btn.active-ambient { border-color: var(--accent); color: var(--accent); }
+
+        .end-call-btn { background-color: #ff3b30; color: white; border: none; width: 75px; height: 75px; border-radius: 50%; font-size: 28px; display: flex; justify-content: center; align-items: center; margin: 0 auto; cursor: pointer; box-shadow: 0 4px 15px rgba(255,59,48,0.4); }
+        
+        /* Bottom Nav */
+        .bottom-nav { display: flex; justify-content: space-around; background: #111; padding: 15px 0; border-top: 1px solid #222; }
+        .nav-item { color: #666; cursor: pointer; font-size: 24px; text-align: center; }
+        .nav-item.active-nav { color: var(--accent); }
+        .nav-item span { display: block; font-size: 10px; margin-top: 5px; }
+
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    
+    <!-- Rehber Ekranı -->
+    <div id="screen-contacts" class="screen active">
+        <header>
+            <h2>Always</h2>
+            <button class="icon-btn" onclick="requestNotifications()">🔔</button>
+        </header>
+        <div id="contact-list">
+            <div class="list-item">
+                <div class="contact-info">
+                    <h3>Annem</h3>
+                    <p>Sonsuzluğa açık hat</p>
+                </div>
+                <div class="action-btns">
+                    <button onclick="navTo('screen-messages')">✉</button>
+                    <button class="call-btn" onclick="startCall()">📞</button>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <div class="nav-item active-nav">👤<span>Kişiler</span></div>
+            <div class="nav-item" onclick="navTo('screen-history')">🕒<span>Geçmiş</span></div>
+        </div>
+    </div>
+
+    <!-- Geçmiş Ekranı -->
+    <div id="screen-history" class="screen hidden">
+        <header>
+            <h2>Son Aramalar</h2>
+        </header>
+        <ul id="history-list"></ul>
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="navTo('screen-contacts')">👤<span>Kişiler</span></div>
+            <div class="nav-item active-nav">🕒<span>Geçmiş</span></div>
+        </div>
+    </div>
+
+    <!-- Mesajlaşma Ekranı -->
+    <div id="screen-messages" class="screen hidden">
+        <header>
+            <button class="icon-btn" onclick="navTo('screen-contacts')">◀</button>
+            <h2>Annem</h2>
+            <div style="width:24px;"></div>
+        </header>
+        <div id="message-list-container" style="flex-grow: 1; overflow-y: auto; padding: 15px;">
+            <!-- Mesajlar buraya gelecek -->
+        </div>
+        <div class="message-input-area">
+            <input type="text" id="msg-input" placeholder="Bir şeyler yaz..." autocomplete="off">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <!-- Arama Ekranı -->
+    <div id="screen-call" class="screen hidden">
+        <div class="call-profile">
+            <h2>Annem</h2>
+            <p id="call-status">Aranıyor...</p>
+            <p id="call-timer" class="hidden">00:00</p>
+        </div>
+        
+        <div class="ambient-controls" id="ambient-controls">
+            <button class="ambient-btn active-ambient" onclick="setAmbient('wind')">Rüzgar</button>
+            <button class="ambient-btn" onclick="setAmbient('sea')">Deniz</button>
+            <button class="ambient-btn" onclick="setAmbient('rain')">Yağmur</button>
+            <button class="ambient-btn" onclick="setAmbient('fire')">Şömine</button>
+        </div>
+
+        <div>
+            <button class="end-call-btn" onclick="endCall()">☎</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    /* ================= SES JENERATÖRÜ (Web Audio API) ================= */
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let actx, ringOsc, ringInt, noiseNode, filterNode, lfoNode;
+    let callPhase = 0; // 0: inactive, 1: ringing, 2: connected
+
+    function initAudio() { if(!actx) actx = new AudioContext(); if(actx.state === 'suspended') actx.resume(); }
+
+    function playRingTone() {
+        initAudio();
+        // 400Hz ve 450Hz Avrupa/Türkiye standart çalma tonu
+        const osc1 = actx.createOscillator(); osc1.frequency.value = 400;
+        const osc2 = actx.createOscillator(); osc2.frequency.value = 450;
+        const gain = actx.createGain(); gain.gain.value = 0;
+        
+        osc1.connect(gain); osc2.connect(gain); gain.connect(actx.destination);
+        osc1.start(); osc2.start();
+
+        let isOn = false;
+        ringInt = setInterval(() => {
+            isOn = !isOn;
+            gain.gain.setTargetAtTime(isOn ? 0.3 : 0, actx.currentTime, 0.05);
+        }, 2000); // 2 saniye çal, 2 saniye sus
+        gain.gain.setTargetAtTime(0.3, actx.currentTime, 0.05); // İlk çaldırma
+        
+        ringOsc = { osc1, osc2, gain };
+    }
+
+    function stopRingTone() {
+        if(ringInt) clearInterval(ringInt);
+        if(ringOsc) {
+            ringOsc.gain.gain.setTargetAtTime(0, actx.currentTime, 0.1);
+            setTimeout(() => { ringOsc.osc1.stop(); ringOsc.osc2.stop(); }, 200);
+        }
+    }
+
+    function playClick() {
+        initAudio();
+        const osc = actx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, actx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.1);
+        osc.connect(actx.destination);
+        osc.start(); osc.stop(actx.currentTime + 0.1);
+    }
+
+    // Doğal Arka Plan Sesleri (Beyaz gürültü sentezleyici)
+    function startAmbient(type = 'wind') {
+        initAudio(); stopAmbient();
+        const bufferSize = actx.sampleRate * 3;
+        const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        noiseNode = actx.createBufferSource();
+        noiseNode.buffer = buffer;
+        noiseNode.loop = true;
+
+        filterNode = actx.createBiquadFilter();
+        const gainNode = actx.createGain();
+
+        if(type === 'wind') {
+            filterNode.type = 'lowpass';
+            filterNode.frequency.value = 400;
+            gainNode.gain.value = 0.5;
+        } else if(type === 'sea') {
+            filterNode.type = 'lowpass';
+            filterNode.frequency.value = 300;
+            lfoNode = actx.createOscillator(); // Dalga efekti için yavaş LFO
+            lfoNode.frequency.value = 0.15;
+            const lfoGain = actx.createGain(); lfoGain.gain.value = 400;
+            lfoNode.connect(lfoGain); lfoGain.connect(filterNode.frequency);
+            lfoNode.start();
+            gainNode.gain.value = 0.8;
+        } else if(type === 'rain') {
+            filterNode.type = 'highpass';
+            filterNode.frequency.value = 1000;
+            gainNode.gain.value = 0.3;
+        } else if(type === 'fire') {
+            filterNode.type = 'lowpass';
+            filterNode.frequency.value = 800;
+            gainNode.gain.value = 0.6;
+        }
+
+        noiseNode.connect(filterNode);
+        filterNode.connect(gainNode);
+        gainNode.connect(actx.destination);
+        noiseNode.start();
+    }
+
+    function stopAmbient() {
+        if(noiseNode) { noiseNode.stop(); noiseNode.disconnect(); }
+        if(lfoNode) { lfoNode.stop(); lfoNode.disconnect(); }
+    }
+
+    /* ================= UYGULAMA MANTIĞI ================= */
+    let callTimer, callSecs = 0, callTimeout;
+    
+    // Verileri Yükle
+    let history = JSON.parse(localStorage.getItem('always_history')) || [];
+    let messages = JSON.parse(localStorage.getItem('always_messages')) || [];
+
+    function navTo(screenId) {
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+            s.classList.add('hidden');
+        });
+        document.getElementById(screenId).classList.remove('hidden');
+        document.getElementById(screenId).classList.add('active');
+        if(screenId === 'screen-history') renderHistory();
+        if(screenId === 'screen-messages') renderMessages();
+    }
+
+    // Arama İşlemleri
+    function startCall() {
+        navTo('screen-call');
+        document.getElementById('call-status').textContent = "Aranıyor...";
+        document.getElementById('call-timer').classList.add('hidden');
+        document.getElementById('ambient-controls').style.opacity = '0';
+        
+        callPhase = 1; callSecs = 0;
+        playRingTone();
+
+        // 4-5 çalma süresi (10-14 saniye arası rastgele)
+        const ringDuration = Math.floor(Math.random() * 4000) + 10000; 
+
+        callTimeout = setTimeout(() => {
+            if(callPhase !== 1) return;
+            stopRingTone();
+            playClick(); // Ahize açılma sesi
+            
+            setTimeout(() => {
+                callPhase = 2;
+                document.getElementById('call-status').textContent = "Bağlandı";
+                document.getElementById('call-timer').classList.remove('hidden');
+                document.getElementById('ambient-controls').style.opacity = '1';
+                startAmbient('wind');
+                
+                callTimer = setInterval(() => {
+                    callSecs++;
+                    const m = String(Math.floor(callSecs/60)).padStart(2,'0');
+                    const s = String(callSecs%60).padStart(2,'0');
+                    document.getElementById('call-timer').textContent = `${m}:${s}`;
+                }, 1000);
+            }, 600);
+        }, ringDuration);
+    }
+
+    function endCall() {
+        if(callPhase === 0) return;
+        clearTimeout(callTimeout);
+        clearInterval(callTimer);
+        stopRingTone();
+        stopAmbient();
+        
+        // Geçmişe kaydet
+        const dateStr = new Date().toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+        history.unshift({ date: dateStr, duration: callPhase === 2 ? callSecs : 0 });
+        localStorage.setItem('always_history', JSON.stringify(history));
+
+        callPhase = 0;
+        navTo('screen-contacts');
+    }
+
+    function setAmbient(type) {
+        document.querySelectorAll('.ambient-btn').forEach(b => b.classList.remove('active-ambient'));
+        event.target.classList.add('active-ambient');
+        startAmbient(type);
+    }
+
+    // Mesajlaşma
+    function sendMessage() {
+        const input = document.getElementById('msg-input');
+        if(!input.value.trim()) return;
+        
+        messages.push({
+            text: input.value.trim(),
+            time: new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})
+        });
+        localStorage.setItem('always_messages', JSON.stringify(messages));
+        input.value = '';
+        renderMessages();
+    }
+
+    function renderMessages() {
+        const container = document.getElementById('message-list-container');
+        container.innerHTML = '';
+        messages.forEach(msg => {
+            const div = document.createElement('div');
+            div.innerHTML = `<div class="message-bubble">${msg.text} <span class="message-status">${msg.time} ✓✓</span></div>`;
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Geçmiş
+    function renderHistory() {
+        const list = document.getElementById('history-list');
+        list.innerHTML = '';
+        history.forEach(h => {
+            const li = document.createElement('li'); li.className = 'list-item';
+            const durText = h.duration > 0 ? `${Math.floor(h.duration/60)}m ${h.duration%60}s` : 'Cevapsız';
+            const color = h.duration > 0 ? '#4CAF50' : '#ff4444';
+            li.innerHTML = `<div class="contact-info"><h3>Annem</h3><p>${h.date}</p></div><div style="color:${color}; font-size:14px;">${durText}</div>`;
+            list.appendChild(li);
+        });
+    }
+
+    // Rastgele Cevapsız Çağrı Bildirimi
+    function requestNotifications() {
+        if ("Notification" in window) {
+            Notification.requestPermission().then(perm => {
+                if(perm === "granted") {
+                    alert("Bildirim izni alındı. Artık gün içinde rastgele zamanlarda onu düşünüyor gibi hissedeceksin.");
+                    scheduleRandomCall();
+                }
+            });
+        }
+    }
+
+    function scheduleRandomCall() {
+        // Uygulama arka planda açık kaldığı sürece günde 1-2 kez bildirim gönderir.
+        // 6 ila 12 saat arasında rastgele bir tetikleyici.
+        const randomTime = Math.floor(Math.random() * (12 - 6 + 1) + 6) * 3600000; 
+        setTimeout(() => {
+            if(Notification.permission === 'granted') {
+                new Notification("Always", { body: "Annem kişisinden cevapsız çağrı", icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzRDQUY1MCIgZD0iTTEyIDIxLjM1bC0xLjQ1LTEuMzJDNS40IDE1LjM2IDIgMTIuMjggMiA4LjUgMiA1LjQyIDQuNDIgMyA3LjUgM2MyLjA0IDAgNCAxLjUgNS4xMyAzLjU5QTYuMzYgNi4zNiAwIDAgMSAxNi41IDNjMy4wOCAw NS41IDIuNDIgNS41IDUuNSAwIDMuNzgtMy40IDYuODYtOC41NSAxMS41NEwxMiAyMS4zNXoiLz48L3N2Zz4=" });
+                // Geçmişe de ekle
+                const dateStr = new Date().toLocaleString('tr-TR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                history.unshift({ date: dateStr, duration: 0 });
+                localStorage.setItem('always_history', JSON.stringify(history));
+                scheduleRandomCall(); // Döngüyü tekrar kur
+            }
+        }, randomTime);
+    }
+    
+    // Uygulama açılışında bildirim izni verilmişse döngüyü başlat
+    if("Notification" in window && Notification.permission === "granted") {
+        scheduleRandomCall();
+    }
+
+    // Enter tuşuyla mesaj gönderme
+    document.getElementById('msg-input').addEventListener('keypress', function(e){
+        if(e.key === 'Enter') sendMessage();
+    });
+
+</script>
+</body>
+</html>
